@@ -1,0 +1,33 @@
+--- da_drventry.c.orig	2017-05-26 19:36:09.482557311 +0900
++++ da_drventry.c	2017-05-27 10:26:50.092632314 +0900
+@@ -266,7 +266,8 @@
+  ************************************************/
+ int gpg_da_MINOR_f(void *file)
+ {
+-	return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++//	return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++	return iminor(file_inode((struct file *) file));
+ }
+ 
+ /************************************************
+@@ -417,6 +418,11 @@
+ 	return;
+ }
+ 
++inline long interruptible_sleep_on_timeout(wait_queue_head_t * q, long timeout)
++{
++	return wait_event_interruptible_timeout(*q, 0, timeout);
++}
++
+ /************************************************/
+ /* gpg_da_interruptible_sleep_on_timeout        */
+ /************************************************/
+@@ -1330,7 +1336,7 @@
+ #else
+ module_param(cp3300_debuglevel, ulong, 0);
+ module_param(da_major, int, 0);
+-module_param(cp3300_version_disp, int, 1);
++module_param(cp3300_version_disp, int, 0);
+ #endif
+ 
+ #define IFDADRV_MODULE_AUTHOR "Interface Corporation <http://www.interface.co.jp>"

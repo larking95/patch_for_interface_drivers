@@ -1,0 +1,11 @@
+obj-m	+= cp3100.o
+cp3100-y	:= ad_entry.o bocp3100.o
+
+KDIR	:= /lib/modules/$(shell uname -r)/build
+PWD	:= $(shell pwd)
+
+default:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+install:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules_install

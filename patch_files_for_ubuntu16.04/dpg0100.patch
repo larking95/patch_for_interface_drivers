@@ -1,0 +1,60 @@
+--- dpg0100.c.orig	2013-06-19 18:22:34.000000000 +0900
++++ dpg0100.c	2019-02-18 00:34:38.363152823 +0900
+@@ -16,7 +16,7 @@
+ #include <linux/pci.h>
+ #include <linux/sched.h>
+ #include <asm/delay.h>
+-#include <asm/system.h>
++// #include <asm/system.h>
+ #include <linux/hdreg.h>
+ #include <linux/slab.h>
+ 
+@@ -228,7 +228,8 @@
+ }
+ int gpg_MINOR_f(void *file)
+ {
+-	return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++//	return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++	return iminor(file_inode((struct file *) file));
+ }
+ void *gpg_get_file_private_data(void *file)
+ {
+@@ -974,15 +975,26 @@
+ 	}
+ 
+ 	down_read(&current->mm->mmap_sem);
++	/*
+ 	ret = get_user_pages(current, current->mm, (Buffer & PAGE_MASK),
+ 		mdl->NumberOfPages, Direction, 1,
+ 		(struct page **)mdl->PageList, NULL);
++	*/
++	if(Direction == 1) {
++		ret = get_user_pages((Buffer & PAGE_MASK), mdl->NumberOfPages,
++                        FOLL_FORCE | FOLL_WRITE, (struct page **)mdl->PageList, NULL);
++	} else {
++		ret = get_user_pages((Buffer & PAGE_MASK), mdl->NumberOfPages,
++                        FOLL_FORCE, (struct page **)mdl->PageList, NULL);
++	}
++	
+ 	up_read(&current->mm->mmap_sem);
+ 	if(ret < mdl->NumberOfPages) {
+ 		/* failed to lock pages */
+ 		if(ret > 0) {
+ 			for(i = 0; i < ret; i++) {
+-				page_cache_release((struct page *)mdl->PageList[i]);
++				//page_cache_release((struct page *)mdl->PageList[i]);
++				put_page((struct page *)mdl->PageList[i]);
+ 			}
+ 			kfree(mdl->PageList);
+ 			mdl->PageList = NULL;
+@@ -1004,7 +1016,8 @@
+ 			if(!PageReserved((struct page *)mdl->PageList[i])) {
+ 				SetPageDirty((struct page *)mdl->PageList[i]);
+ 			}
+-			page_cache_release((struct page *)mdl->PageList[i]);
++			//page_cache_release((struct page *)mdl->PageList[i]);
++			put_page((struct page *)mdl->PageList[i]);
+ 		}
+ 		kfree(mdl->PageList);
+ 		mdl->PageList = NULL;
+

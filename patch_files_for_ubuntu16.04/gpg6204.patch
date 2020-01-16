@@ -1,0 +1,33 @@
+--- penc_drventry.c.orig	2019-02-18 01:18:42.336979926 +0900
++++ penc_drventry.c	2019-02-09 01:34:38.041634924 +0900
+@@ -185,6 +185,10 @@
+ 	
+ 	return;
+ }
++inline long interruptible_sleep_on_timeout(wait_queue_head_t * q, long timeout)
++{
++	return wait_event_interruptible_timeout(*q, 0, timeout);
++}
+ 
+ /************************************************/
+ /* gpg_penc_interruptible_sleep_on_timeout      */
+@@ -489,7 +493,8 @@
+ /* ioctl system call                            */
+ /************************************************/
+ #if (LINUX_VERSION_CODE >= VERSION(2,6,36))
+-static int penc_ioctl(struct file *file, unsigned int iocmd, unsigned long ioarg)
++//static int penc_ioctl(struct file *file, unsigned int iocmd, unsigned long ioarg)
++static long penc_ioctl(struct file *file, unsigned int iocmd, unsigned long ioarg)
+ #else
+ static int penc_ioctl(struct inode *inode, struct file *file, unsigned int iocmd, unsigned long ioarg)
+ #endif
+@@ -540,7 +545,8 @@
+ #else
+ module_param(cp6204_debuglevel, ulong, 0);
+ module_param(penc_major, int, 0);
+-module_param(cp6204_version_disp, int, 1);
++// module_param(cp6204_version_disp, int, 1);
++module_param(cp6204_version_disp, int, 0);
+ #endif
+ 
+ #if (LINUX_VERSION_CODE >= VERSION(2,6,0))

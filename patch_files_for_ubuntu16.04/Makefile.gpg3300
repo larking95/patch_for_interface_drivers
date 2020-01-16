@@ -1,0 +1,11 @@
+obj-m	+= cp3300.o
+cp3300-y	:= da_drventry.o bocp3300.o
+
+KDIR	:= /lib/modules/$(shell uname -r)/build
+PWD	:= $(shell pwd)
+
+default:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+install:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules_install

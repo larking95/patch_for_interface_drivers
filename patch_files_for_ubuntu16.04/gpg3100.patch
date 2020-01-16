@@ -1,0 +1,70 @@
+--- ./ad_entry.c.org	2016-07-12 15:59:36.000000000 +0900
++++ ./ad_entry.c	2019-02-18 01:08:56.902702284 +0900
+@@ -592,6 +592,7 @@
+ 	/* Try to fault in all of the necessary pages */
+ 	down_read(&current->mm->mmap_sem);
+ 	
++	/*
+ 	ret = get_user_pages(
+ 		current, 
+ 		current->mm, 
+@@ -601,14 +602,25 @@
+ 		1,
+ 		(struct page **)mdl->PageList, 
+ 		NULL);
++	*/
++
++	if(Direction == WRITE) {
++		ret = get_user_pages((Buffer & PAGE_MASK), mdl->NumberOfPages,
++                        FOLL_FORCE | FOLL_WRITE, (struct page **)mdl->PageList, NULL);
++ 	} else {
++		ret = get_user_pages((Buffer & PAGE_MASK), mdl->NumberOfPages,
++			FOLL_FORCE, (struct page **)mdl->PageList, NULL);
++	}
++
+ 	up_read(&current->mm->mmap_sem);
+-	
++
+ 	/* Errors and no page mapped should return here */
+ 	if (ret < mdl->NumberOfPages) {
+ 		/* failed to lock pages */
+ 		if (ret > 0) {
+ 			for (i = 0; i < ret; i++) {
+-				page_cache_release((struct page *)mdl->PageList[i]);
++				//page_cache_release((struct page *)mdl->PageList[i]);
++				put_page((struct page *)mdl->PageList[i]);
+ 			}
+ 			kfree(mdl->PageList);
+ 			mdl->PageList = NULL;
+@@ -635,7 +647,8 @@
+ 			if (!PageReserved((struct page *)mdl->PageList[i])) {
+ 				SetPageDirty((struct page *)mdl->PageList[i]);
+ 			}
+-			page_cache_release((struct page *)mdl->PageList[i]);
++			//page_cache_release((struct page *)mdl->PageList[i]);
++			put_page((struct page *)mdl->PageList[i]);
+ 		}
+ 		kfree(mdl->PageList);
+ 		mdl->PageList = NULL;
+@@ -874,6 +887,11 @@
+ 	}
+ }
+ 
++inline long interruptible_sleep_on_timeout(wait_queue_head_t * q, long timeout)
++{
++	return wait_event_interruptible_timeout(*q, 0, timeout);
++}
++
+ /************************************************/
+ /* gpg_ad_interruptible_sleep_on_timeout        */
+ /************************************************/
+@@ -1894,7 +1912,8 @@
+  ************************************************/
+ int gpg_ad_MINOR_f(void *file)
+ {
+-	return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++	//return MINOR(((struct file *)file)->f_dentry->d_inode->i_rdev);
++	return iminor(file_inode((struct file *) file));
+ }
+ 
+ /************************************************
